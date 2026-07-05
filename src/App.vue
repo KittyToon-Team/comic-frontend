@@ -1,7 +1,6 @@
-﻿<template>
+<template>
   <div class="app-shell">
-    <h1>Comic Frontend</h1>
-    <p>Frontend đã được chia file. Tiếp theo bạn có thể thêm router và nội dung vào các trang riêng.</p>
+    <router-view />
   </div>
 </template>
 
@@ -9,8 +8,17 @@
 </script>
 
 <style>
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f3f4f6;
+}
+
+#app {
+  min-height: 100vh;
+}
+
 .app-shell {
-  padding: 40px;
-  font-family: Arial, sans-serif;
+  min-height: 100vh;
 }
 </style>
