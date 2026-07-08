@@ -53,7 +53,8 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import axios from "axios";
+
+import api from "../../api/axios";
 import logoUrl from "../../images/Logo.png";
 
 const router = useRouter();
@@ -83,23 +84,35 @@ const handleSubmit = async () => {
   isError.value = false;
 
   try {
-    const response = await axios.post("http://localhost:8080/api/login", {
+    const response = await api.post("/login", {
       email: email.value,
       password: password.value,
     });
 
     if (response.status === 200) {
       const user = response.data;
+
       localStorage.setItem("currentUser", JSON.stringify(user));
-      router.push({ name: "Home" });
+
+      if (user.role === "ADMIN") {
+        message.value = "Đăng nhập Admin thành công! Đang chuyển hướng...";
+        setTimeout(() => {
+          router.push("/admin");
+        }, 1000);
+      } else {
+        message.value = "Đăng nhập thành công!";
+        setTimeout(() => {
+          router.push({ name: "Home" });
+        }, 1000);
+      }
     }
   } catch (error) {
     isError.value = true;
-    if (error.response?.status === 401) {
-      message.value = error.response.data || "Sai email hoặc mật khẩu";
+    if (error.response?.status === 401 || error.response?.status === 400) {
+      message.value = error.response.data?.message || "Sai email hoặc mật khẩu";
     } else {
       message.value =
-        "Không thể kết nối tới máy chủ. Hãy chắc chắn backend đang chạy.";
+          "Không thể kết nối tới máy chủ. Hãy chắc chắn backend đang chạy.";
     }
   } finally {
     loading.value = false;
