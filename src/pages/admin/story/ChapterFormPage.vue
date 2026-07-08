@@ -1,54 +1,88 @@
 <template>
   <div class="page-shell">
-    <router-link
-      v-if="form.storyId"
-      :to="{ name: 'AdminChapterList', params: { storyId: form.storyId } }"
-      class="back-link"
-    >
-      ← Quay lại danh sách chương
-    </router-link>
+    <!-- Tiêu đề và nút quay lại căn trái hoàn toàn -->
+    <div class="header-section">
+      <router-link
+          v-if="form.storyId"
+          :to="{ name: 'AdminChapterList', params: { storyId: form.storyId } }"
+          class="back-link"
+      >
+        ← Quay lại danh sách chương
+      </router-link>
+      <h2>{{ isEdit ? "✏️ Chỉnh sửa chương" : "✨ Thêm chương truyện mới" }}</h2>
+    </div>
 
-    <h2>{{ isEdit ? "Sửa chương" : "Thêm chương mới" }}</h2>
+    <!-- Trạng thái đang tải dữ liệu cũ (chế độ Sửa) -->
+    <div v-if="loading" class="status-message loading">
+      <span class="spinner"></span> Đang tải thông tin chương truyện...
+    </div>
 
-    <p v-if="loading">Đang tải...</p>
-
+    <!-- Form nhập liệu phong cách Hồng - Trắng căn trái tuyệt đối -->
     <form v-else class="chapter-form" @submit.prevent="handleSubmit">
+
       <div class="form-row">
         <div class="form-group">
-          <label>Số chương *</label>
-          <input v-model.number="form.chapterNumber" type="number" step="0.1" required />
+          <label for="chapterNumber">Số chương <span class="required">*</span></label>
+          <input
+              id="chapterNumber"
+              v-model.number="form.chapterNumber"
+              type="number"
+              step="0.1"
+              required
+          />
         </div>
 
         <div class="form-group">
-          <label>Quyền truy cập</label>
-          <select v-model.number="form.accessType">
-            <option :value="0">Public</option>
-            <option :value="1">Cần đăng nhập</option>
+          <label for="accessType">Quyền truy cập đọc</label>
+          <select id="accessType" v-model.number="form.accessType">
+            <option :value="0">🔓 Public (Miễn phí)</option>
+            <option :value="1">🔒 Cần đăng nhập tài khoản</option>
           </select>
         </div>
       </div>
 
       <div class="form-group">
-        <label>Tiêu đề chương</label>
-        <input v-model="form.title" placeholder="VD: Khởi đầu mới" />
+        <label for="title">Tiêu đề chương</label>
+        <input
+            id="title"
+            v-model="form.title"
+            placeholder="VD: Khởi đầu mới, Cuộc chạm trán bất ngờ..."
+        />
       </div>
 
       <div class="form-group">
-        <label>Danh sách ảnh (mỗi dòng 1 URL, theo đúng thứ tự hiển thị)</label>
+        <label for="images">Danh sách ảnh nội dung <span class="required">*</span></label>
+        <span class="label-desc">Mỗi dòng ứng với 1 đường dẫn URL ảnh, sắp xếp đúng theo thứ tự từ trên xuống dưới.</span>
         <textarea
-          v-model="imageUrlsText"
-          rows="10"
-          placeholder="https://.../page1.jpg&#10;https://.../page2.jpg"
+            id="images"
+            v-model="imageUrlsText"
+            rows="12"
+            placeholder="https://example.com/page1.jpg&#10;https://example.com/page2.jpg"
         ></textarea>
-        <p class="hint">{{ imageCount }} ảnh</p>
+
+        <!-- Nhãn đếm số lượng ảnh thiết kế nổi bật -->
+        <div class="hint-badge">
+          📸 Hệ thống ghi nhận: <strong class="text-main">{{ imageCount }}</strong> ảnh minh họa.
+        </div>
       </div>
 
-      <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+      <!-- Khối hiển thị lỗi hệ thống -->
+      <div v-if="errorMessage" class="status-message error">
+        ⚠️ {{ errorMessage }}
+      </div>
 
+      <!-- Cụm nút bấm lưu dữ liệu căn trái -->
       <div class="form-actions">
-        <button type="submit" :disabled="submitting">
-          {{ submitting ? "Đang lưu..." : isEdit ? "Cập nhật" : "Tạo mới" }}
+        <button type="submit" class="btn-submit" :disabled="submitting">
+          {{ submitting ? "Đang xử lý..." : isEdit ? "Cập nhật dữ liệu" : "Tạo chương mới" }}
         </button>
+        <router-link
+            v-if="form.storyId"
+            :to="{ name: 'AdminChapterList', params: { storyId: form.storyId } }"
+            class="btn-cancel"
+        >
+          Hủy bỏ
+        </router-link>
       </div>
     </form>
   </div>
@@ -80,7 +114,7 @@ const form = reactive({
 });
 
 const imageCount = computed(
-  () => imageUrlsText.value.split("\n").map((s) => s.trim()).filter(Boolean).length
+    () => imageUrlsText.value.split("\n").map((s) => s.trim()).filter(Boolean).length
 );
 
 onMounted(async () => {
@@ -94,10 +128,10 @@ onMounted(async () => {
       form.title = data.title;
       form.accessType = data.accessType;
       imageUrlsText.value = (data.images || [])
-        .map((img) => img.imageUrl)
-        .join("\n");
+          .map((img) => img.imageUrl)
+          .join("\n");
     } catch (err) {
-      errorMessage.value = "Không tải được thông tin chương.";
+      errorMessage.value = "Không thể tải được thông tin chương truyện này.";
     } finally {
       loading.value = false;
     }
@@ -110,9 +144,9 @@ async function handleSubmit() {
   const payload = {
     ...form,
     imageUrls: imageUrlsText.value
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean),
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean),
   };
 
   try {
@@ -123,7 +157,7 @@ async function handleSubmit() {
     }
     router.push({ name: "AdminChapterList", params: { storyId: form.storyId } });
   } catch (err) {
-    errorMessage.value = err.response?.data?.message || "Lưu thất bại.";
+    errorMessage.value = err.response?.data?.message || "Lưu dữ liệu chương thất bại.";
   } finally {
     submitting.value = false;
   }
@@ -131,28 +165,56 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
+
 .page-shell {
-  padding: 20px;
-  max-width: 640px;
+  padding: 32px;
+  background: #fffdfa;
+  min-height: 100%;
+  max-width: 720px;
+  text-align: left;
+}
+
+.header-section {
+  margin-bottom: 24px;
+  border-bottom: 2px dashed #fcd3e7;
+  padding-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .back-link {
-  display: inline-block;
-  margin-bottom: 10px;
-  color: #64748b;
+  color: #ec4899;
   text-decoration: none;
   font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.back-link:hover {
+  color: #a21caf;
+  text-decoration: underline;
+}
+
+.header-section h2 {
+  margin: 0;
+  color: #a21caf;
+  font-size: 26px;
+  font-weight: 700;
 }
 
 .chapter-form {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
+  background: #ffffff;
+  padding: 28px;
+  border-radius: 18px;
+  border: 1px solid rgba(245, 184, 219, 0.5);
+  box-shadow: 0 10px 30px rgba(236, 72, 153, 0.03);
 }
 
 .form-row {
   display: flex;
-  gap: 16px;
+  gap: 20px;
+  width: 100%;
 }
 
 .form-row .form-group {
@@ -160,52 +222,142 @@ async function handleSubmit() {
 }
 
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .form-group label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 6px;
+  font-weight: 700;
+  color: #9f1239;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.label-desc {
+  font-size: 12px;
+  color: #933f83;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.required {
+  color: #ef4444;
 }
 
 .form-group input,
 .form-group textarea,
 .form-group select {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 12px 16px;
+  border: 1px solid #f5c6dc;
+  border-radius: 12px;
+  background: #fff5fb;
+  font-size: 14px;
+  color: #33121f;
+  outline: none;
   box-sizing: border-box;
   font-family: inherit;
+  transition: all 0.2s ease;
 }
 
-.hint {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #64748b;
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: #d946ef;
+  box-shadow: 0 0 0 3px rgba(233, 65, 166, 0.12);
+  background: #ffffff;
+}
+
+.form-group textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.hint-badge {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4c1d32;
+  background: #fff0f6;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #ffd6e6;
+  display: inline-block;
 }
 
 .form-actions {
-  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+  justify-content: flex-start;
 }
 
-button[type="submit"] {
-  padding: 10px 24px;
-  background: #2563eb;
+.btn-submit {
+  background: linear-gradient(135deg, #d946ef 0%, #f472b6 100%);
   color: white;
+  padding: 12px 28px;
+  border-radius: 12px;
   border: none;
-  border-radius: 6px;
+  font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
-  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.2);
+  transition: all 0.2s;
 }
 
-button[type="submit"]:disabled {
-  opacity: 0.6;
+.btn-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-submit:disabled {
+  background: #cbd5e1;
+  color: #94a3b8;
+  box-shadow: none;
   cursor: not-allowed;
 }
 
-.error {
-  color: #dc2626;
+.btn-cancel {
+  padding: 12px 24px;
+  color: #933f83;
+  text-decoration: none;
+  background: #fff1f2;
+  border: 1px solid #fbcfe8;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+  background: #ffe4e6;
+  color: #b91c1c;
+}
+
+.status-message {
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-top: 16px;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.status-message.error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.status-message.loading {
+  color: #db2777;
+  font-weight: 600;
+}
+
+.text-main {
+  color: #d946ef;
 }
 </style>

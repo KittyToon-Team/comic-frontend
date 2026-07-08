@@ -7,6 +7,7 @@ import StoryListPage from "../pages/admin/story/StoryListPage.vue";
 import StoryFormPage from "../pages/admin/story/StoryFormPage.vue";
 import ChapterListPage from "../pages/admin/story/ChapterListPage.vue";
 import ChapterFormPage from "../pages/admin/story/ChapterFormPage.vue";
+import AdminCategoryList from "../pages/admin/category/AdminCategoryList.vue";
 
 const routes = [
   {
@@ -63,6 +64,11 @@ const routes = [
         component: ChapterFormPage,
         props: true,
       },
+      {
+        path: "categories",
+        name: "AdminCategoryList",
+        component: AdminCategoryList,
+      },
     ],
   },
 ];
@@ -72,9 +78,7 @@ const router = createRouter({
   routes,
 });
 
-// Route guard: chặn truy cập /admin/* nếu chưa đăng nhập hoặc không phải ADMIN
 router.beforeEach((to, from, next) => {
-  // Thay đổi ở dòng này: Kiểm tra xuyên suốt từ route cha đến route con
   if (to.matched.some(record => record.meta.requiresAdmin)) {
     const raw = localStorage.getItem("currentUser");
     const user = raw ? JSON.parse(raw) : null;

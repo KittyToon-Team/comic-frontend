@@ -1,53 +1,67 @@
 <template>
   <div class="page-shell">
-    <div class="header">
-      <div>
+    <div class="header-section">
+      <div class="title-block">
         <router-link :to="{ name: 'AdminStoryList' }" class="back-link">
           ← Quay lại danh sách truyện
         </router-link>
         <h2>Danh sách chương</h2>
+        <p class="subtitle">Quản lý thứ tự chương, lượt xem và quyền truy cập đọc truyện.</p>
       </div>
       <router-link
-        :to="{ name: 'AdminChapterNew', params: { storyId } }"
-        class="btn-primary"
+          :to="{ name: 'AdminChapterNew', params: { storyId } }"
+          class="btn-primary"
       >
-        + Thêm chương
+        + Thêm chương mới
       </router-link>
     </div>
 
-    <p v-if="loading">Đang tải...</p>
-    <p v-else-if="errorMessage" class="error">{{ errorMessage }}</p>
+    <div v-if="loading" class="status-message loading">
+      <span class="spinner"></span> Đang tải danh sách chương...
+    </div>
+    <div v-else-if="errorMessage" class="status-message error">
+      ⚠️ {{ errorMessage }}
+    </div>
 
-    <table v-else>
-      <thead>
+    <div v-else class="table-responsive">
+      <table>
+        <thead>
         <tr>
-          <th>Số chương</th>
-          <th>Tiêu đề</th>
-          <th>Quyền truy cập</th>
-          <th>Lượt xem</th>
-          <th>Hành động</th>
+          <th style="width: 120px">Số chương</th>
+          <th>Tiêu đề chương</th>
+          <th style="width: 160px">Quyền truy cập</th>
+          <th style="width: 140px">Lượt xem</th>
+          <th style="width: 180px">Hành động</th>
         </tr>
-      </thead>
-      <tbody>
+        </thead>
+        <tbody>
         <tr v-for="c in chapters" :key="c.id">
-          <td>{{ c.chapterNumber }}</td>
-          <td>{{ c.title }}</td>
-          <td>{{ c.accessType === 0 ? "Public" : "Cần đăng nhập" }}</td>
-          <td>{{ c.viewCount }}</td>
+          <td class="font-bold text-main">Chương {{ c.chapterNumber }}</td>
+          <td class="font-semibold">{{ c.title || "(Không có tiêu đề)" }}</td>
+          <td>
+              <span class="badge" :class="{ 'badge-public': c.accessType === 0, 'badge-private': c.accessType !== 0 }">
+                {{ c.accessType === 0 ? "🔓 Public" : "🔒 Cần đăng nhập" }}
+              </span>
+          </td>
+          <td class="view-count">👀 {{ c.viewCount?.toLocaleString() || 0 }}</td>
           <td class="actions">
-            <router-link :to="{ name: 'AdminChapterEdit', params: { id: c.id } }">
-              Sửa
+            <router-link :to="{ name: 'AdminChapterEdit', params: { id: c.id } }" class="btn-action edit">
+              ✏️ Sửa
             </router-link>
-            <button class="link-btn danger" @click="handleDelete(c.id)">
-              Xóa
+            <button class="btn-action delete" @click="handleDelete(c.id)">
+              🗑️ Xóa
             </button>
           </td>
         </tr>
         <tr v-if="chapters.length === 0">
-          <td colspan="5" class="empty">Truyện này chưa có chương nào.</td>
+          <td colspan="5" class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p>Truyện này chưa có chương nào trong hệ thống.</p>
+          </td>
         </tr>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -70,19 +84,19 @@ async function fetchChapters() {
     const res = await getChaptersByStory(props.storyId);
     chapters.value = res.data;
   } catch (err) {
-    errorMessage.value = "Không tải được danh sách chương.";
+    errorMessage.value = "Không thể tải được danh sách chương từ máy chủ.";
   } finally {
     loading.value = false;
   }
 }
 
 async function handleDelete(id) {
-  if (!confirm("Xóa chương này?")) return;
+  if (!confirm("Xác nhận xóa chương này vĩnh viễn?")) return;
   try {
     await deleteChapter(id);
     fetchChapters();
   } catch (err) {
-    alert(err.response?.data?.message || "Xóa thất bại.");
+    alert(err.response?.data?.message || "Đã xảy ra lỗi khi xóa dữ liệu.");
   }
 }
 
@@ -90,76 +104,188 @@ onMounted(fetchChapters);
 </script>
 
 <style scoped>
+
 .page-shell {
-  padding: 20px;
+  padding: 32px;
+  background: #fffdfa;
+  min-height: 100%;
+  text-align: left;
 }
 
-.header {
+.header-section {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 16px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  border-bottom: 2px dashed #fcd3e7;
+  padding-bottom: 20px;
+}
+
+.title-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .back-link {
   display: inline-block;
-  margin-bottom: 6px;
-  color: #64748b;
+  margin-bottom: 8px;
+  color: #ec4899;
   text-decoration: none;
   font-size: 13px;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #a21caf;
+  text-decoration: underline;
+}
+
+.title-block h2 {
+  margin: 0;
+  color: #a21caf;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.title-block .subtitle {
+  margin: 6px 0 0 0;
+  color: #933f83;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #d946ef 0%, #f472b6 100%);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.2);
+  transition: opacity 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.table-responsive {
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(245, 184, 219, 0.5);
+  box-shadow: 0 10px 30px rgba(236, 72, 153, 0.04);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
 }
 
-th,
-td {
-  border: 1px solid #e2e8f0;
-  padding: 10px;
+th {
+  background: #fff0f6;
+  color: #9f1239;
+  font-weight: 700;
+  padding: 16px;
+  font-size: 14px;
+  border-bottom: 1px solid #f5c6dc;
   text-align: left;
+}
+
+td {
+  padding: 16px;
+  border-bottom: 1px solid #fff0f6;
+  color: #4c1d32;
+  font-size: 14px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+tr:hover td {
+  background: #fff9fc;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-public {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+.badge-private {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+
+.view-count {
+  font-weight: 500;
+  color: #64748b;
 }
 
 .actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.actions a {
-  color: #2563eb;
+.btn-action {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   text-decoration: none;
-}
-
-.link-btn {
-  background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
-  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s;
 }
 
-.link-btn.danger {
+.btn-action.edit {
+  background: #fff1f2;
+  color: #e11d48;
+}
+.btn-action.edit:hover { background: #ffe4e6; }
+
+.btn-action.delete {
+  background: #fef2f2;
   color: #dc2626;
 }
+.btn-action.delete:hover { background: #fee2e2; }
 
-.btn-primary {
-  background: #2563eb;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-weight: 600;
-  height: fit-content;
+.empty-state {
+  text-align: center !important;
+  padding: 60px 20px !important;
+  color: #933f83;
 }
 
-.error {
-  color: #dc2626;
+.empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
 }
 
-.empty {
-  text-align: center;
-  color: #64748b;
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.text-main { color: #a21caf; }
+
+.status-message {
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+.status-message.error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.status-message.loading {
+  color: #db2777;
 }
 </style>

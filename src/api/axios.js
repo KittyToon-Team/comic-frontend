@@ -1,10 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "/api", // Đã chuẩn hóa theo Vite Proxy ở bước trước
+    baseURL: "/api",
 });
 
-// 🌟 THÊM ĐOẠN NÀY: Chiều gửi đi (Request) - Tự động đính kèm Token
 api.interceptors.request.use(
     (config) => {
         const raw = localStorage.getItem("currentUser");
@@ -21,7 +20,6 @@ api.interceptors.request.use(
     }
 );
 
-// Chiều nhận về (Response) - Giữ nguyên logic cũ của bạn
 api.interceptors.response.use(
     (response) => response,
     (error) => {
