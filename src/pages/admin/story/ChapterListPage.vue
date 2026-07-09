@@ -9,7 +9,11 @@
         <p class="subtitle">Quản lý thứ tự chương, lượt xem và quyền truy cập đọc truyện.</p>
       </div>
       <router-link
-          :to="{ name: 'AdminChapterNew', params: { storyId } }"
+          :to="{
+                 name: 'AdminChapterNew',
+                 params: { storyId },
+                 query: { nextChapter: chapters.length > 0 ? chapters[0].chapterNumber + 1 : 1 }
+               }"
           class="btn-primary"
       >
         + Thêm chương mới
@@ -45,7 +49,10 @@
           </td>
           <td class="view-count">👀 {{ c.viewCount?.toLocaleString() || 0 }}</td>
           <td class="actions">
-            <router-link :to="{ name: 'AdminChapterEdit', params: { id: c.id } }" class="btn-action edit">
+            <router-link
+                :to="{ name: 'AdminChapterEdit', params: { storyId: props.storyId, id: c.id } }"
+                class="btn-action edit"
+            >
               ✏️ Sửa
             </router-link>
             <button class="btn-action delete" @click="handleDelete(c.id)">
