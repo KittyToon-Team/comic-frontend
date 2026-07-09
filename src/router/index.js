@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginPage from "../pages/auth/LoginPage.vue";
+import RegisterPage from "../pages/auth/RegisterPage.vue";
 import HomePage from "../pages/client/HomePage.vue";
+import ProfilePage from "../pages/client/ProfilePage.vue";
 import AdminPage from "../pages/admin/AdminPage.vue";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage.vue";
 import StoryListPage from "../pages/admin/story/StoryListPage.vue";
@@ -16,9 +18,26 @@ const routes = [
     component: LoginPage,
   },
   {
+    path: "/register",
+    name: "Register",
+    component: RegisterPage,
+  },
+  {
     path: "/",
     name: "Home",
     component: HomePage,
+  },
+  {
+    path: "/home/:id",
+    name: "UserHome",
+    component: HomePage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/profile/:id",
+    name: "Profile",
+    component: ProfilePage,
+    meta: { requiresAuth: true },
   },
   {
     path: "/admin",
@@ -79,14 +98,19 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  if (to.matched.some(record => record.meta.requiresAdmin)) {
-    const raw = localStorage.getItem("currentUser");
-    const user = raw ? JSON.parse(raw) : null;
+  const raw = localStorage.getItem("currentUser");
+  const user = raw ? JSON.parse(raw) : null;
 
+  if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!user) {
       return next({ name: "Login" });
     }
+  }
 
+  if (to.matched.some(record => record.meta.requiresAdmin)) {
+    if (!user) {
+      return next({ name: "Login" });
+    }
     if (user.role !== "ADMIN") {
       return next({ name: "Home" });
     }

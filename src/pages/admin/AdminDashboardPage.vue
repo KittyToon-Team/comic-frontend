@@ -43,8 +43,8 @@
 </template>
 
 <script setup>
-import DashboardHeader from "../../components/DashboardHeader.vue";
-import DashboardStats from "../../components/DashboardStats.vue";
+import DashboardHeader from "../../components/admin/DashboardHeader.vue";
+import DashboardStats from "../../components/admin/DashboardStats.vue";
 </script>
 
 <style scoped>

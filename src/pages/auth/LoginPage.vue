@@ -32,6 +32,9 @@
         <button type="submit" :disabled="loading || !email || !password">
           {{ loading ? "Đang đăng nhập..." : "Đăng nhập" }}
         </button>
+        <button type="button" class="btn-guest" @click="handleGuestLogin" :disabled="loading">
+          Đăng nhập bằng quyền Khách
+        </button>
       </form>
 
       <p
@@ -44,7 +47,7 @@
 
       <div class="helper-links">
         <a href="#">Quên mật khẩu?</a>
-        <a href="#">Đăng ký</a>
+        <router-link :to="{ name: 'Register' }">Đăng ký</router-link>
       </div>
     </div>
   </div>
@@ -102,7 +105,7 @@ const handleSubmit = async () => {
       } else {
         message.value = "Đăng nhập thành công!";
         setTimeout(() => {
-          router.push({ name: "Home" });
+          router.push({ name: "UserHome", params: { id: user.id } });
         }, 1000);
       }
     }
@@ -117,6 +120,11 @@ const handleSubmit = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const handleGuestLogin = () => {
+  localStorage.removeItem("currentUser");
+  router.push({ name: "Home" });
 };
 </script>
 
@@ -224,6 +232,18 @@ button:hover {
 button:disabled {
   opacity: 0.7;
   cursor: wait;
+}
+
+.btn-guest {
+  background: #fff5fb;
+  color: #a21caf;
+  border: 1px solid #fbcfe8;
+  margin-top: 0;
+}
+
+.btn-guest:hover {
+  background: #fdf2f8;
+  opacity: 1;
 }
 
 .feedback {
