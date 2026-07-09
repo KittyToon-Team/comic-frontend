@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginPage from "../pages/auth/LoginPage.vue";
 import RegisterPage from "../pages/auth/RegisterPage.vue";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage.vue";
 import HomePage from "../pages/client/HomePage.vue";
 import ProfilePage from "../pages/client/ProfilePage.vue";
 import AdminPage from "../pages/admin/AdminPage.vue";
@@ -21,6 +22,11 @@ const routes = [
     path: "/register",
     name: "Register",
     component: RegisterPage,
+  },
+  {
+    path: "/forgot-password",
+    name: "ForgotPassword",
+    component: ForgotPasswordPage,
   },
   {
     path: "/",

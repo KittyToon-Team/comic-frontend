@@ -20,14 +20,14 @@
           :class="{ active: activeTab === 'history' }"
           @click="activeTab = 'history'"
         >
-          ⏱️ Lịch sử đọc
+          <History class="tab-icon" /> Lịch sử đọc
         </button>
         <button 
           class="tab-btn" 
           :class="{ active: activeTab === 'favorites' }"
           @click="activeTab = 'favorites'"
         >
-          ❤️ Truyện yêu thích
+          <Heart class="tab-icon" /> Truyện yêu thích
         </button>
       </div>
 
@@ -79,6 +79,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { History, Heart } from 'lucide-vue-next';
 import api from '../../api/axios';
 
 const route = useRoute();
@@ -225,6 +226,13 @@ const goToStory = (id) => {
   background: linear-gradient(135deg, #d946ef 0%, #f472b6 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+}
+
+.tab-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  stroke-width: 2.5px;
 }
 
 .grid-layout {

@@ -3,26 +3,13 @@
     <div class="auth-card">
       <div class="auth-header">
         <div class="brand-icon">
-          <UserPlus class="icon" />
+          <KeyRound class="icon" />
         </div>
-        <h2>Đăng ký</h2>
-        <p>Tạo tài khoản mới để trải nghiệm đầy đủ tính năng</p>
+        <h2>Quên Mật Khẩu</h2>
+        <p>Nhập email của bạn để thiết lập lại mật khẩu mới</p>
       </div>
 
-      <form @submit.prevent="handleRegister" class="auth-form">
-        <div class="form-group">
-          <label>Tên đăng nhập</label>
-          <div class="input-wrapper">
-            <User class="input-icon" />
-            <input 
-              type="text" 
-              v-model="username" 
-              placeholder="Nhập tên đăng nhập..." 
-              required
-            />
-          </div>
-        </div>
-
+      <form @submit.prevent="handleResetPassword" class="auth-form">
         <div class="form-group">
           <label>Email đăng ký</label>
           <div class="input-wrapper">
@@ -30,37 +17,53 @@
             <input 
               type="email" 
               v-model="email" 
-              placeholder="email@example.com" 
+              placeholder="Nhập email của bạn..." 
               required
             />
           </div>
         </div>
 
         <div class="form-group">
-          <label>Mật khẩu</label>
+          <label>Mật khẩu mới</label>
           <div class="input-wrapper">
             <Lock class="input-icon" />
             <input 
               type="password" 
-              v-model="password" 
-              placeholder="••••••••" 
+              v-model="newPassword" 
+              placeholder="Nhập mật khẩu mới..." 
               required
             />
           </div>
         </div>
 
-        <div v-if="message" class="alert" :class="{ error: isError, success: !isError }">
+        <div class="form-group">
+          <label>Xác nhận mật khẩu</label>
+          <div class="input-wrapper">
+            <CheckCircle class="input-icon" />
+            <input 
+              type="password" 
+              v-model="confirmPassword" 
+              placeholder="Nhập lại mật khẩu mới..." 
+              required
+            />
+          </div>
+        </div>
+
+        <div v-if="error" class="alert error">
+          {{ error }}
+        </div>
+        <div v-if="message" class="alert success">
           {{ message }}
         </div>
 
-        <button type="submit" class="submit-btn" :disabled="loading || !email || !password || !username">
-          {{ loading ? "Đang xử lý..." : "Đăng ký tài khoản" }}
+        <button type="submit" class="submit-btn" :disabled="loading">
+          {{ loading ? 'Đang xử lý...' : 'Cập nhật mật khẩu' }}
         </button>
       </form>
 
       <div class="auth-footer">
         <p>
-          Đã có tài khoản?
+          Nhớ ra mật khẩu rồi?
           <router-link :to="{ name: 'Login' }">Đăng nhập</router-link>
         </p>
       </div>
@@ -71,57 +74,48 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { UserPlus, User, Mail, Lock } from "lucide-vue-next";
+import { KeyRound, Mail, Lock, CheckCircle } from "lucide-vue-next";
 import api from "../../api/axios";
 
 const router = useRouter();
 
-const username = ref("");
 const email = ref("");
-const password = ref("");
+const newPassword = ref("");
+const confirmPassword = ref("");
 const loading = ref(false);
+const error = ref("");
 const message = ref("");
-const isError = ref(false);
 
-const handleRegister = async () => {
-  if (!username.value || !email.value || !password.value) {
-    isError.value = true;
-    message.value = "Vui lòng nhập đầy đủ thông tin.";
+const handleResetPassword = async () => {
+  error.value = "";
+  message.value = "";
+
+  if (newPassword.value !== confirmPassword.value) {
+    error.value = "Mật khẩu xác nhận không khớp!";
     return;
   }
 
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailPattern.test(email.value)) {
-    isError.value = true;
-    message.value = "Vui lòng nhập địa chỉ email hợp lệ.";
+  if (newPassword.value.length < 6) {
+    error.value = "Mật khẩu mới phải có ít nhất 6 ký tự.";
     return;
   }
 
   loading.value = true;
-  message.value = "";
-  isError.value = false;
-
   try {
-    const response = await api.post("/users", {
-      username: username.value,
+    const response = await api.post("/forgot-password", {
       email: email.value,
-      password: password.value,
+      newPassword: newPassword.value,
     });
 
-    if (response.status === 201 || response.status === 200) {
-      isError.value = false;
-      message.value = "Đăng ký thành công! Đang chuyển hướng...";
+    if (response.status === 200) {
+      message.value = "Đổi mật khẩu thành công! Tự động chuyển hướng...";
       setTimeout(() => {
-        router.push("/login");
-      }, 1500);
+        router.push({ name: "Login" });
+      }, 2000);
     }
-  } catch (error) {
-    isError.value = true;
-    if (error.response?.status === 400) {
-      message.value = error.response.data || "Thông tin đăng ký không hợp lệ.";
-    } else {
-      message.value = "Không thể kết nối tới máy chủ. Hãy thử lại sau.";
-    }
+  } catch (err) {
+    console.error("Forgot password error:", err);
+    error.value = err.response?.data || "Email không tồn tại hoặc có lỗi xảy ra.";
   } finally {
     loading.value = false;
   }
@@ -241,7 +235,9 @@ const handleRegister = async () => {
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 20px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .alert.error {

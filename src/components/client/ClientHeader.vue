@@ -20,7 +20,9 @@
           <button type="button" @click="goToLogin">Đăng nhập</button>
         </div>
         <div class="user-profile" v-if="currentUser">
-          <router-link :to="{ name: 'Profile', params: { id: currentUser.id } }" class="avatar" style="text-decoration: none;">👑</router-link>
+          <router-link :to="{ name: 'Profile', params: { id: currentUser.id } }" class="avatar" style="text-decoration: none;">
+            <Crown class="avatar-icon" />
+          </router-link>
           <div class="user-info">
             <strong>
               <router-link :to="{ name: 'Profile', params: { id: currentUser.id } }" style="color: inherit; text-decoration: none;">
@@ -50,6 +52,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { Crown } from "lucide-vue-next";
 import logoUrl from "../../images/Logo.png";
 
 const router = useRouter();
@@ -181,11 +184,27 @@ const logout = () => {
 }
 
 .user-profile .avatar {
-  font-size: 24px;
-  background: #fff0f6;
+  background: linear-gradient(135deg, #d946ef 0%, #f472b6 100%);
   padding: 8px;
   border-radius: 50%;
-  border: 1px solid #f5c6dc;
+  border: 2px solid #fce7f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+  transition: all 0.3s ease;
+}
+
+.user-profile .avatar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.3);
+}
+
+.avatar-icon {
+  width: 20px;
+  height: 20px;
+  color: white;
+  stroke-width: 2.5px;
 }
 
 .user-info {
