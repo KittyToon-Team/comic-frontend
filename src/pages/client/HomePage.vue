@@ -17,8 +17,11 @@
           </div>
 
           <div class="account-hint">
-            <span>Tạo tài khoản để yêu thích truyện và donate dha nhá (sếp qa k cần donate)</span>
-            <button type="button">Đăng nhập</button>
+            <span
+              >Tạo tài khoản để yêu thích truyện và donate dha nhá (sếp qa k cần
+              donate)</span
+            >
+            <button type="button" @click="goToLogin">Đăng nhập</button>
           </div>
         </div>
       </div>
@@ -39,7 +42,10 @@
     <main class="container main-content">
       <section class="notice-bar">
         <span>💗</span>
-        <p>KittyToon demo giao diện đọc truyện. Các nút trên trang chỉ để trang trí, chưa gắn chức năng.</p>
+        <p>
+          KittyToon demo giao diện đọc truyện. Các nút trên trang chỉ để trang
+          trí, chưa gắn chức năng.
+        </p>
       </section>
 
       <section class="quick-categories">
@@ -56,7 +62,11 @@
           </div>
 
           <div class="story-list">
-            <article v-for="story in latestStories" :key="story.title" class="story-row">
+            <article
+              v-for="story in latestStories"
+              :key="story.title"
+              class="story-row"
+            >
               <div class="story-cover">
                 <span>{{ story.icon }}</span>
               </div>
@@ -70,7 +80,9 @@
                 </div>
               </div>
 
-              <button type="button" class="chapter-btn">Chương {{ story.chapter }}</button>
+              <button type="button" class="chapter-btn">
+                Chương {{ story.chapter }}
+              </button>
             </article>
           </div>
         </div>
@@ -79,8 +91,11 @@
           <div class="side-card user-card">
             <img :src="logoUrl" alt="KittyToon" />
             <h3>Tủ truyện của bạn</h3>
-            <p>Đăng nhập để lưu lịch sử đọc, truyện theo dõi và nhận thông báo chương mới.</p>
-            <button type="button">Vào tủ truyện</button>
+            <p>
+              Đăng nhập để lưu lịch sử đọc, truyện theo dõi và nhận thông báo
+              chương mới.
+            </p>
+            <button type="button" @click="goToLogin">Vào tủ truyện</button>
           </div>
 
           <div class="side-card ranking-card">
@@ -105,7 +120,9 @@
               <span>Demo</span>
             </div>
             <div class="genre-list">
-              <a v-for="genre in sideGenres" :key="genre" href="#">{{ genre }}</a>
+              <a v-for="genre in sideGenres" :key="genre" href="#">{{
+                genre
+              }}</a>
             </div>
           </div>
         </aside>
@@ -121,7 +138,8 @@
           </a>
           <p>
             KittyToon là trang demo đọc truyện tranh online, cập nhật manga,
-            manhwa, webtoon với giao diện đơn giản, dễ nhìn và cùng tone hồng cute.
+            manhwa, webtoon với giao diện đơn giản, dễ nhìn và cùng tone hồng
+            cute.
           </p>
           <p>Chịu trách nhiệm nội dung: sếp qa</p>
           <p>Email liên hệ: ptqa_chacthe@gmail.com</p>
@@ -149,7 +167,14 @@
 </template>
 
 <script setup>
+import { useRouter } from "vue-router";
 import logoUrl from "../../images/Logo.png";
+
+const router = useRouter();
+
+const goToLogin = () => {
+  router.push("/login");
+};
 
 const categories = [
   "Action",
@@ -229,16 +254,16 @@ const sideGenres = [
 .home-page {
   min-height: 100vh;
   background:
-      radial-gradient(circle at top, rgba(255, 215, 230, 0.35), transparent 32%),
-      linear-gradient(180deg, #fff7fb 0%, #fff 42%, #fff7fb 100%);
+    radial-gradient(circle at top, rgba(255, 215, 230, 0.35), transparent 32%),
+    linear-gradient(180deg, #fff7fb 0%, #fff 42%, #fff7fb 100%);
   color: #27111c;
   font-family:
-      Inter,
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
 .container {
