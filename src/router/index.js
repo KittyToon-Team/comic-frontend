@@ -11,6 +11,7 @@ import StoryFormPage from "../pages/admin/story/StoryFormPage.vue";
 import ChapterListPage from "../pages/admin/story/ChapterListPage.vue";
 import ChapterFormPage from "../pages/admin/story/ChapterFormPage.vue";
 import AdminCategoryList from "../pages/admin/category/AdminCategoryList.vue";
+import UserListPage from "../pages/admin/user/UserListPage.vue";
 
 const routes = [
   {
@@ -93,6 +94,11 @@ const routes = [
         path: "categories",
         name: "AdminCategoryList",
         component: AdminCategoryList,
+      },
+      {
+        path: "users",
+        name: "AdminUserList",
+        component: UserListPage,
       },
     ],
   },

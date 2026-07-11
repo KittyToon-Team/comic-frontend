@@ -15,10 +15,13 @@
     <nav class="menu">
       <router-link :to="{ name: 'AdminDashboard' }">📊 Dashboard</router-link>
       <router-link :to="{ name: 'AdminStoryList' }"
-        >📚 Quản lý Truyện</router-link
+      >📚 Quản lý Truyện</router-link
       >
       <router-link :to="{ name: 'AdminCategoryList' }"
-        >🏷️ Quản lý Thể loại</router-link
+      >🏷️ Quản lý Thể loại</router-link
+      >
+      <router-link :to="{ name: 'AdminUserList' }"
+      >👤 Quản lý Tài khoản</router-link
       >
     </nav>
 
