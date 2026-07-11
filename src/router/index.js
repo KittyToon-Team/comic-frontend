@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import LoginPage from "../pages/auth/LoginPage.vue";
+import ChapterReaderPage from "../pages/client/ChapterReader.vue";
 import RegisterPage from "../pages/auth/RegisterPage.vue";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage.vue";
 import HomePage from "../pages/client/HomePage.vue";
@@ -45,6 +46,12 @@ const routes = [
     name: "Profile",
     component: ProfilePage,
     meta: { requiresAuth: true },
+  },
+  {
+    path: "/doc/:id",
+    name: "ChapterReader",
+    component: ChapterReaderPage,
+    props: true,
   },
   {
     path: "/admin",
