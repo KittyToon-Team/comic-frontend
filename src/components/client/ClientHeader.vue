@@ -11,8 +11,8 @@
         </router-link>
 
         <div class="search-box">
-          <input type="text" placeholder="Tìm truyện, tác giả, thể loại..." />
-          <button type="button">Tìm</button>
+          <input type="text" ref="searchInput" v-model="searchQuery" @keyup.enter="handleSearch" placeholder="Tìm truyện, tác giả, thể loại..." />
+          <button type="button" @click="handleSearch">Tìm</button>
         </div>
 
         <div class="account-hint" v-if="!currentUser">
@@ -37,13 +37,24 @@
 
     <nav class="main-nav">
       <div class="container nav-inner">
-        <a href="#">Lịch sử</a>
-        <a href="#">Tìm truyện</a>
-        <a href="#">Theo dõi</a>
-        <a href="#">Thể loại ▾</a>
-        <a href="#">Truyện hot</a>
-        <a href="#">Truyện mới</a>
-        <a href="#">Truyện full</a>
+        <a href="#" @click.prevent="goToProfileTab('history')">Lịch sử</a>
+        <a href="#" @click.prevent="focusSearch">Tìm truyện</a>
+        <a href="#" @click.prevent="goToProfileTab('favorites')">Theo dõi</a>
+        <div class="dropdown">
+          <a href="#" @click.prevent class="dropbtn">Thể loại ▾</a>
+          <div class="dropdown-content">
+            <router-link :to="{ name: 'StoryFilter' }">Tất cả thể loại</router-link>
+            <router-link 
+              v-for="cat in categories" 
+              :key="cat.id" 
+              :to="{ name: 'StoryFilter', query: { cat: cat.id } }"
+            >
+              {{ cat.name }}
+            </router-link>
+          </div>
+        </div>
+        <router-link :to="{ name: 'StoryFilter', query: { sort: 'hot' } }">Truyện hot</router-link>
+        <router-link :to="{ name: 'StoryFilter', query: { sort: 'new' } }">Truyện mới</router-link>
       </div>
     </nav>
   </header>
@@ -53,15 +64,25 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Crown } from "lucide-vue-next";
+import api from "../../api/axios";
 import logoUrl from "../../images/Logo.png";
 
 const router = useRouter();
 const currentUser = ref(null);
+const searchInput = ref(null);
+const searchQuery = ref('');
+const categories = ref([]);
 
-onMounted(() => {
+onMounted(async () => {
   const raw = localStorage.getItem("currentUser");
   if (raw) {
     currentUser.value = JSON.parse(raw);
+  }
+  try {
+    const res = await api.get("/categories");
+    categories.value = res.data || [];
+  } catch (err) {
+    console.error("Lỗi tải thể loại:", err);
   }
 });
 
@@ -73,6 +94,29 @@ const logout = () => {
   localStorage.removeItem("currentUser");
   currentUser.value = null;
   router.push("/login");
+};
+
+const goToProfileTab = (tab) => {
+  if (!currentUser.value) {
+    alert("Vui lòng đăng nhập để sử dụng tính năng này!");
+    router.push("/login");
+    return;
+  }
+  router.push({ name: 'Profile', params: { id: currentUser.value.id }, query: { tab } });
+};
+
+const focusSearch = () => {
+  if (searchInput.value) {
+    searchInput.value.focus();
+  }
+};
+
+const handleSearch = () => {
+  if (searchQuery.value.trim()) {
+    router.push({ name: 'Home', query: { search: searchQuery.value.trim() } });
+  } else {
+    router.push({ name: 'Home' });
+  }
 };
 </script>
 
@@ -254,6 +298,60 @@ const logout = () => {
 }
 
 .nav-inner a:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+  height: 100%;
+}
+
+.dropbtn {
+  display: inline-flex;
+  align-items: center;
+  height: 50px;
+  padding: 0 18px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  min-width: 180px;
+  box-shadow: 0px 8px 16px 0px rgba(236, 72, 153, 0.2);
+  z-index: 100;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  border: 1px solid #f5c6dc;
+  border-top: none;
+}
+
+.dropdown-content a {
+  color: #9f1239;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-transform: none;
+  font-weight: 600;
+  height: auto;
+  font-size: 14px;
+}
+
+.dropdown-content a:hover {
+  background-color: #fdf2f8;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown:hover .dropbtn {
   background: rgba(255, 255, 255, 0.16);
 }
 

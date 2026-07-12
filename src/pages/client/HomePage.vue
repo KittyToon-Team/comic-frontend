@@ -11,28 +11,35 @@
       </section>
 
       <section class="quick-categories">
-        <button v-for="category in categories" :key="category.id" type="button">
+        <button 
+          v-for="category in categories" 
+          :key="category.id" 
+          type="button"
+          :class="{ active: route.query.category == category.id }"
+          @click="filterByCategory(category.id)"
+        >
           {{ category.name }}
         </button>
+        <button v-if="route.query.category" type="button" class="clear-btn" @click="filterByCategory(null)">Xóa lọc</button>
       </section>
 
       <section class="layout-grid">
         <div class="content-left">
           <div class="section-title">
-            <h2>Truyện mới cập nhật</h2>
-            <span>Danh sách mới nhất</span>
+            <h2>{{ sectionTitle }}</h2>
+            <span>{{ displayedStories.length }} truyện</span>
           </div>
 
           <div class="story-list">
             <div v-if="loading" class="loading">Đang tải dữ liệu...</div>
             <article
               v-else
-              v-for="story in latestStories"
+              v-for="story in displayedStories"
               :key="story.id"
               class="story-row"
             >
               <div class="story-cover">
-                <img v-if="story.coverImageUrl" :src="story.coverImageUrl" :alt="story.title" class="cover-img"/>
+                <img v-if="story.coverImageUrl" :src="resolveImageUrl(story.coverImageUrl)" :alt="story.title" class="cover-img"/>
                 <span v-else>📖</span>
               </div>
 
@@ -45,18 +52,18 @@
                 </div>
               </div>
 
-              <button type="button" class="chapter-btn">
+              <button type="button" class="chapter-btn" @click="goToStoryDetail(story.id)">
                 Đọc ngay
               </button>
             </article>
-            <div v-if="!loading && latestStories.length === 0" class="empty-state">
-              Chưa có truyện nào trong hệ thống.
+            <div v-if="!loading && displayedStories.length === 0" class="empty-state">
+              Không tìm thấy truyện nào phù hợp.
             </div>
           </div>
         </div>
 
         <aside class="sidebar">
-          <div class="side-card user-card">
+          <div class="side-card user-card" v-if="!currentUser">
             <img :src="logoUrl" alt="KittyToon" />
             <h3>Tủ truyện của bạn</h3>
             <p>
@@ -88,7 +95,7 @@
               <span>Tất cả</span>
             </div>
             <div class="genre-list">
-              <a v-for="category in categories" :key="category.id" href="#">
+              <a href="#" v-for="category in categories" :key="category.id" @click.prevent="filterByCategory(category.id)">
                 {{ category.name }}
               </a>
             </div>
@@ -103,19 +110,33 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import api from "../../api/axios";
 import ClientHeader from "../../components/client/ClientHeader.vue";
 import ClientFooter from "../../components/client/ClientFooter.vue";
 import logoUrl from "../../images/Logo.png";
 
 const router = useRouter();
+const route = useRoute();
 
 const categories = ref([]);
 const allStories = ref([]);
 const loading = ref(true);
+const currentUser = ref(null);
+
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/')) return `http://localhost:8080${url}`;
+  return `http://localhost:8080/${url}`;
+};
 
 onMounted(async () => {
+  const raw = localStorage.getItem("currentUser");
+  if (raw) {
+    currentUser.value = JSON.parse(raw);
+  }
+
   try {
     const [storiesRes, catsRes] = await Promise.all([
       api.get("/stories"),
@@ -130,16 +151,57 @@ onMounted(async () => {
   }
 });
 
-const latestStories = computed(() => {
-  return [...allStories.value].reverse().slice(0, 10);
+const displayedStories = computed(() => {
+  let result = [...allStories.value];
+  const search = route.query.search;
+  const categoryId = route.query.category;
+
+  if (search) {
+    const q = search.toLowerCase();
+    result = result.filter(s => 
+      (s.title && s.title.toLowerCase().includes(q)) || 
+      (s.author && s.author.toLowerCase().includes(q))
+    );
+  }
+
+  if (categoryId) {
+    result = result.filter(s => s.categories && s.categories.some(c => c.id == categoryId));
+  }
+
+  return result.sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : a.id;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : b.id;
+    return timeB - timeA;
+  }).slice(0, 20); // Show max 20 results for now
+});
+
+const sectionTitle = computed(() => {
+  if (route.query.search) return `Kết quả tìm kiếm cho: "${route.query.search}"`;
+  if (route.query.category) {
+    const cat = categories.value.find(c => c.id == route.query.category);
+    if (cat) return `Thể loại: ${cat.name}`;
+  }
+  return "Truyện mới cập nhật";
 });
 
 const hotStories = computed(() => {
   return [...allStories.value].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 5);
 });
 
+const filterByCategory = (categoryId) => {
+  if (categoryId) {
+    router.push({ name: 'Home', query: { category: categoryId } });
+  } else {
+    router.push({ name: 'Home' });
+  }
+};
+
 const goToLogin = () => {
   router.push("/login");
+};
+
+const goToStoryDetail = (id) => {
+  router.push(`/story/${id}`);
 };
 </script>
 
@@ -200,6 +262,18 @@ const goToLogin = () => {
 
 .quick-categories button:hover {
   background: #fdf2f8;
+}
+
+.quick-categories button.active {
+  background: linear-gradient(135deg, #d946ef 0%, #f472b6 100%);
+  color: white;
+  border-color: #d946ef;
+}
+
+.quick-categories button.clear-btn {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
 }
 
 .layout-grid {

@@ -17,7 +17,8 @@
           <th style="width: 80px">ID</th>
           <th style="width: 200px">Tên thể loại</th>
           <th>Mô tả chi tiết</th>
-          <th style="width: 180px; text-align: center">Hành động</th>
+          <th style="width: 140px; text-align: center">Trạng thái</th>
+          <th style="width: 140px; text-align: center">Hành động</th>
         </tr>
         </thead>
         <tbody>
@@ -25,19 +26,21 @@
           <td class="font-bold">{{ cat.id }}</td>
           <td class="font-semibold text-main">{{ cat.name }}</td>
           <td class="text-desc">{{ cat.description || 'Chưa có mô tả chi tiết cho thể loại này.' }}</td>
+          <td style="text-align: center">
+            <span class="badge" :class="cat.isHidden ? 'badge-private' : 'badge-public'">
+               {{ cat.isHidden ? 'Đang ẩn' : 'Hiển thị' }}
+            </span>
+          </td>
           <td>
             <div class="actions">
-              <button class="btn-action edit" @click="openEditModal(cat)">
-                ✏️ Sửa
-              </button>
-              <button class="btn-action delete" @click="handleDelete(cat.id)">
-                🗑️ Xóa
+              <button class="btn-action" :class="cat.isHidden ? 'show' : 'hide'" @click="toggleVisibility(cat)">
+                {{ cat.isHidden ? '👁️‍🗨️ Hiện' : '👁️ Ẩn' }}
               </button>
             </div>
           </td>
         </tr>
         <tr v-if="categories.length === 0">
-          <td colspan="4" class="empty-state">
+          <td colspan="5" class="empty-state">
             <div class="empty-icon">🏷️</div>
             <p>Chưa có thể loại nào trong hệ thống cơ sở dữ liệu.</p>
           </td>
@@ -111,14 +114,6 @@ const openAddModal = () => {
   showModal.value = true;
 };
 
-const openEditModal = (cat) => {
-  isEdit.value = true;
-  currentId.value = cat.id;
-  form.name = cat.name;
-  form.description = cat.description;
-  showModal.value = true;
-};
-
 const closeModal = () => {
   showModal.value = false;
 };
@@ -152,13 +147,18 @@ const handleSubmit = async () => {
   }
 };
 
-const handleDelete = async (id) => {
-  if (confirm("Xác nhận xóa thể loại này? Các bộ truyện thuộc thể loại này sẽ tự động gỡ liên kết trong hệ thống.")) {
+const toggleVisibility = async (cat) => {
+  const actionName = cat.isHidden ? 'hiện lại' : 'ẩn';
+  const confirmMsg = cat.isHidden 
+    ? `Xác nhận hiện lại thể loại này?` 
+    : `Xác nhận ẩn thể loại này? Mọi truyện gắn thẻ này cũng sẽ bị ẩn.`;
+    
+  if (confirm(confirmMsg)) {
     try {
-      await api.delete(`/admin/categories/${id}`);
+      await api.put(`/admin/categories/${cat.id}/toggle-visibility`);
       fetchCategories();
     } catch (err) {
-      alert(err.response?.data?.message || "Không thể thực hiện xóa thể loại này.");
+      alert(err.response?.data?.message || `Không thể ${actionName} thể loại này.`);
     }
   }
 };
@@ -275,17 +275,35 @@ tr:hover td {
   transition: all 0.2s;
 }
 
-.btn-action.edit {
+.btn-action.show {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+.btn-action.show:hover { background: #dcfce7; }
+
+.btn-action.hide {
   background: #fff1f2;
   color: #e11d48;
 }
-.btn-action.edit:hover { background: #ffe4e6; }
+.btn-action.hide:hover { background: #ffe4e6; }
 
-.btn-action.delete {
-  background: #fef2f2;
-  color: #dc2626;
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
 }
-.btn-action.delete:hover { background: #fee2e2; }
+.badge-public {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+.badge-private {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
 
 .empty-state {
   text-align: center !important;

@@ -43,15 +43,21 @@
 
       <div class="form-group">
         <label for="cover">Đường dẫn ảnh bìa (URL)</label>
-        <input
-            id="cover"
-            v-model="form.coverImageUrl"
-            placeholder="https://example.com/image.jpg"
-        />
+        <div class="upload-wrapper">
+          <input type="file" accept="image/*" @change="handleCoverUpload" ref="coverFileInput" style="display: none;" />
+          <button type="button" class="btn-upload" @click="$refs.coverFileInput.click()" :disabled="uploadingCover">
+            {{ uploadingCover ? 'Đang tải lên...' : 'Tải ảnh lên từ máy' }}
+          </button>
+          <input
+              id="cover"
+              v-model="form.coverImageUrl"
+              placeholder="Hoặc nhập URL ảnh..."
+          />
+        </div>
 
         <div v-if="form.coverImageUrl" class="preview-box">
           <p class="preview-label">Xem trước ảnh bìa:</p>
-          <img :src="form.coverImageUrl" class="preview-img" alt="preview" />
+          <img :src="resolveImageUrl(form.coverImageUrl)" class="preview-img" alt="preview" />
         </div>
       </div>
 
@@ -100,6 +106,7 @@
 import { reactive, ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { getStory, createStory, updateStory, getCategories} from "../../../api/storyApi";
+import { uploadSingleFile } from "../../../api/uploadApi";
 
 const props = defineProps({
   id: { type: [String, Number], default: null },
@@ -111,6 +118,7 @@ const isEdit = computed(() => !!props.id);
 const loading = ref(false);
 const submitting = ref(false);
 const errorMessage = ref("");
+const uploadingCover = ref(false);
 
 const availableCategories = ref([]);
 
@@ -163,10 +171,58 @@ async function handleSubmit() {
     submitting.value = false;
   }
 }
+
+const handleCoverUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  uploadingCover.value = true;
+  errorMessage.value = "";
+  try {
+    const res = await uploadSingleFile(file);
+    form.coverImageUrl = res.data.url;
+  } catch (error) {
+    errorMessage.value = "Lỗi khi tải ảnh lên. Vui lòng thử lại.";
+    console.error(error);
+  } finally {
+    uploadingCover.value = false;
+    event.target.value = "";
+  }
+};
+
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/')) return `http://localhost:8080${url}`;
+  return `http://localhost:8080/${url}`;
+};
 </script>
 
 <style scoped>
-
+.upload-wrapper {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.btn-upload {
+  padding: 12px 16px;
+  background: #fdf2f8;
+  color: #db2777;
+  border: 1px solid #fbcfe8;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.btn-upload:hover:not(:disabled) {
+  background: #fce7f3;
+  border-color: #f9a8d4;
+}
+.btn-upload:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
 .categories-checkbox-group {
   display: flex;
   flex-wrap: wrap;

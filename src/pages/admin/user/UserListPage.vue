@@ -27,7 +27,9 @@
       v-else
       :users="users"
       :updating-id="updatingId"
+      :locking-id="lockingId"
       @toggle-role="handleToggleRole"
+      @toggle-lock="handleToggleLock"
     />
   </div>
 </template>
@@ -37,12 +39,14 @@ import { ref, onMounted, watch } from "vue";
 import UserSearchBar from "../../../components/admin/users/UserSearchBar.vue";
 import UserTable from "../../../components/admin/users/UserTable.vue";
 import { getUsers, updateUserRole } from "../../../api/userApi";
+import api from "../../../api/axios";
 
 const users = ref([]);
 const keyword = ref("");
 const loading = ref(false);
 const errorMessage = ref("");
 const updatingId = ref(null);
+const lockingId = ref(null);
 const toast = ref(null);
 let debounceTimer = null;
 let toastTimer = null;
@@ -91,6 +95,29 @@ async function handleToggleRole(user) {
     showToast("error", err.response?.data?.message || "Không thể cập nhật vai trò tài khoản.");
   } finally {
     updatingId.value = null;
+  }
+}
+
+async function handleToggleLock(user) {
+  if (user.username === "admin") return;
+  const confirmMsg = user.isLocked 
+    ? `Xác nhận MỞ KHÓA tài khoản "${user.displayName || user.username}"?` 
+    : `Xác nhận KHÓA tài khoản "${user.displayName || user.username}"? Người dùng này sẽ bị đăng xuất ngay lập tức và không thể truy cập lại.`;
+    
+  if (!confirm(confirmMsg)) return;
+  
+  lockingId.value = user.id;
+  try {
+    const res = await api.put(`/admin/users/${user.id}/toggle-lock`);
+    const isLocked = res.data.isLocked;
+    const idx = users.value.findIndex((u) => u.id === user.id);
+    if (idx !== -1) users.value[idx].isLocked = isLocked;
+    
+    showToast("success", res.data.message);
+  } catch (err) {
+    showToast("error", err.response?.data?.message || "Không thể thực hiện thao tác này.");
+  } finally {
+    lockingId.value = null;
   }
 }
 

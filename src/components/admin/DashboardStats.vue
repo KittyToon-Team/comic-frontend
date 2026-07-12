@@ -24,8 +24,8 @@ const loading = ref(true);
 onMounted(async () => {
   try {
     const [storiesRes, catsRes] = await Promise.all([
-      api.get("/stories"),
-      api.get("/categories")
+      api.get("/admin/stories"),
+      api.get("/admin/categories")
     ]);
     
     const stories = storiesRes.data || [];

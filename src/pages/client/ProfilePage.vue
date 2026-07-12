@@ -1,6 +1,8 @@
 <template>
-  <main class="profile-page">
-    <div class="container">
+  <div class="profile-page-wrapper">
+    <ClientHeader />
+    <main class="profile-page">
+      <div class="container">
       <div class="profile-header">
         <div class="avatar-section">
           <div class="avatar-circle">
@@ -74,13 +76,17 @@
       </div>
     </div>
   </main>
+  <ClientFooter />
+</div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { History, Heart } from 'lucide-vue-next';
 import api from '../../api/axios';
+import ClientHeader from '../../components/client/ClientHeader.vue';
+import ClientFooter from '../../components/client/ClientFooter.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -94,6 +100,10 @@ const loading = ref(true);
 onMounted(async () => {
   const userId = route.params.id;
   
+  if (route.query.tab) {
+    activeTab.value = route.query.tab;
+  }
+
   // Lấy thông tin user từ localStorage nếu trùng khớp
   const localUser = JSON.parse(localStorage.getItem('currentUser'));
   if (localUser && localUser.id == userId) {
@@ -103,6 +113,12 @@ onMounted(async () => {
   }
 
   await fetchData(userId);
+});
+
+watch(() => route.query.tab, (newTab) => {
+  if (newTab) {
+    activeTab.value = newTab;
+  }
 });
 
 const fetchData = async (userId) => {
@@ -133,17 +149,21 @@ const formatDate = (dateString) => {
 
 const goToStory = (id) => {
   if (!id) return;
-  // Giả sử có route StoryDetail
-  // router.push({ name: 'StoryDetail', params: { id } });
-  console.log("Go to story", id);
+  router.push({ name: 'StoryDetail', params: { id } });
 };
 </script>
 
 <style scoped>
+.profile-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .profile-page {
+  flex: 1;
   padding: 40px 0;
   background: #fffdfa;
-  min-height: 100vh;
 }
 
 .profile-header {

@@ -4,7 +4,9 @@ import ChapterReaderPage from "../pages/client/ChapterReader.vue";
 import RegisterPage from "../pages/auth/RegisterPage.vue";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage.vue";
 import HomePage from "../pages/client/HomePage.vue";
+import StoryDetail from "../pages/client/StoryDetail.vue";
 import ProfilePage from "../pages/client/ProfilePage.vue";
+import StoryFilterPage from "../pages/client/StoryFilterPage.vue";
 import AdminPage from "../pages/admin/AdminPage.vue";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage.vue";
 import StoryListPage from "../pages/admin/story/StoryListPage.vue";
@@ -40,6 +42,16 @@ const routes = [
     name: "UserHome",
     component: HomePage,
     meta: { requiresAuth: true },
+  },
+  {
+    path: "/filter",
+    name: "StoryFilter",
+    component: StoryFilterPage,
+  },
+  {
+    path: "/story/:id",
+    name: "StoryDetail",
+    component: StoryDetail,
   },
   {
     path: "/profile/:id",

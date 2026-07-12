@@ -150,6 +150,14 @@ import {
   createChapter,
   updateChapter,
 } from "../../../api/chapterApi";
+import { uploadMultipleFiles } from "../../../api/uploadApi";
+
+const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/')) return `http://localhost:8080${url}`;
+  return `http://localhost:8080/${url}`;
+};
 
 const props = defineProps({
   id: { type: [String, Number], default: null },
@@ -227,24 +235,17 @@ onMounted(async () => {
       form.title = data.title;
       form.accessType = data.accessType;
 
-      // Load existing images as file objects
+      // Load existing images without downloading them again
       if (data.images && data.images.length > 0) {
         for (const img of data.images) {
-          try {
-            const response = await fetch(img.imageUrl);
-            const blob = await response.blob();
-            const file = new File([blob], `image-${Date.now()}.jpg`, {
-              type: "image/jpeg",
-            });
+            const fullUrl = resolveImageUrl(img.imageUrl);
             uploadedFiles.value.push({
-              name: file.name,
-              size: file.size,
-              file: file,
-              preview: img.imageUrl,
+              name: `Ảnh đính kèm ${img.imageOrder}`,
+              size: 0, // Unknown size
+              file: null, // Indicates it's already on the server
+              preview: fullUrl,
+              originalUrl: img.imageUrl // Keep the original relative URL for saving
             });
-          } catch (err) {
-            console.error("Failed to load image:", img.imageUrl);
-          }
         }
       }
     } catch (err) {
@@ -265,20 +266,27 @@ async function handleSubmit() {
   errorMessage.value = "";
 
   try {
-    // Convert files to base64 URLs for sending to API
+    // Upload new files to backend
     const imageUrls = [];
-    for (const fileObj of uploadedFiles.value) {
+    const filesToUpload = [];
+    const indexMap = [];
+
+    for (let i = 0; i < uploadedFiles.value.length; i++) {
+      const fileObj = uploadedFiles.value[i];
       if (fileObj.file) {
-        // If it's a new file, convert to base64
-        const base64 = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.readAsDataURL(fileObj.file);
-        });
-        imageUrls.push(base64);
+        filesToUpload.push(fileObj.file);
+        indexMap.push(i);
       } else {
-        // If it's existing image, use the URL
-        imageUrls.push(fileObj.preview);
+        imageUrls[i] = fileObj.originalUrl || fileObj.preview;
+      }
+    }
+
+    if (filesToUpload.length > 0) {
+      const res = await uploadMultipleFiles(filesToUpload);
+      const uploadedUrls = res.data.urls;
+      
+      for(let j = 0; j < uploadedUrls.length; j++) {
+        imageUrls[indexMap[j]] = uploadedUrls[j];
       }
     }
 
