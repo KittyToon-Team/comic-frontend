@@ -37,6 +37,7 @@
           <select id="accessType" v-model.number="form.accessType">
             <option :value="0">🔓 Public (Miễn phí)</option>
             <option :value="1">🔒 Cần đăng nhập tài khoản</option>
+            <option :value="2">💎 Trả phí (PAID)</option>
           </select>
         </div>
       </div>
@@ -174,7 +175,6 @@ const submitting = ref(false);
 const errorMessage = ref("");
 const uploadedFiles = ref([]);
 
-// 🌟 Chuyển thành ref linh hoạt để tiếp nhận ID từ API đổ về
 const currentStoryId = ref(props.storyId || route.params.storyId || null);
 const nextChapterSuggest = route.query.nextChapter;
 
@@ -209,7 +209,6 @@ function handleFileSelect(event) {
       reader.readAsDataURL(file);
     }
   });
-  // Reset input
   event.target.value = "";
 }
 
@@ -225,7 +224,6 @@ onMounted(async () => {
       const res = await getChapter(props.id);
       const data = res.data;
 
-      // 🌟 Cập nhật lại storyId nhận từ database cho cả form và mốc điều hướng quay về
       if (data.story?.id) {
         currentStoryId.value = Number(data.story.id);
         form.storyId = Number(data.story.id);
@@ -233,18 +231,17 @@ onMounted(async () => {
 
       form.chapterNumber = data.chapterNumber;
       form.title = data.title;
-      form.accessType = data.accessType;
+      form.accessType = data.accessType != null ? data.accessType : 0;
 
-      // Load existing images without downloading them again
       if (data.images && data.images.length > 0) {
         for (const img of data.images) {
             const fullUrl = resolveImageUrl(img.imageUrl);
             uploadedFiles.value.push({
               name: `Ảnh đính kèm ${img.imageOrder}`,
-              size: 0, // Unknown size
-              file: null, // Indicates it's already on the server
+              size: 0,
+              file: null,
               preview: fullUrl,
-              originalUrl: img.imageUrl // Keep the original relative URL for saving
+              originalUrl: img.imageUrl
             });
         }
       }
@@ -266,7 +263,6 @@ async function handleSubmit() {
   errorMessage.value = "";
 
   try {
-    // Upload new files to backend
     const imageUrls = [];
     const filesToUpload = [];
     const indexMap = [];
@@ -407,10 +403,6 @@ async function handleSubmit() {
   border-color: #d946ef;
   box-shadow: 0 0 0 3px rgba(233, 65, 166, 0.12);
   background: #ffffff;
-}
-.form-group textarea {
-  resize: vertical;
-  line-height: 1.6;
 }
 .hint-badge {
   margin-top: 10px;

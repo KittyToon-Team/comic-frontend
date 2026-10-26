@@ -9,7 +9,7 @@ api.interceptors.request.use(
         const raw = localStorage.getItem("currentUser");
         const user = raw ? JSON.parse(raw) : null;
 
-        // Nếu có user và user có chứa token (JWT), đính nó vào Header
+        // Nếu có user và token, đính kèm vào Authorization header
         if (user && user.token) {
             config.headers.Authorization = `Bearer ${user.token}`;
         }
@@ -23,9 +23,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401 || error.response?.status === 403) {
+        const status = error.response?.status;
+        if (status === 401) {
+            // Token hết hạn hoặc không hợp lệ -> xóa phiên đăng nhập
             localStorage.removeItem("currentUser");
-            window.location.href = "/login";
+            const currentPath = window.location.pathname;
+            // Chỉ chuyển hướng nếu đang ở route yêu cầu quyền đăng nhập
+            if (currentPath.startsWith("/admin") || currentPath.startsWith("/profile")) {
+                window.location.href = "/login";
+            }
         }
         return Promise.reject(error);
     }

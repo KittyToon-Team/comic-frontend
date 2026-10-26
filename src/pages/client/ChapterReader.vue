@@ -27,8 +27,27 @@
             </button>
           </div>
 
-          <!-- Image Viewer -->
-          <div class="images-container">
+          <!-- Lock Banner if No Access -->
+          <div v-if="!chapter.hasAccess" class="lock-banner">
+            <div class="lock-icon">{{ chapter.accessType === 2 ? '💎' : '🔒' }}</div>
+            <h2 class="lock-title">
+              {{ chapter.accessType === 2 ? 'Chương truyện trả phí (PAID)' : 'Yêu cầu đăng nhập tài khoản' }}
+            </h2>
+            <p class="lock-desc">
+              {{ chapter.message || (chapter.accessType === 2 ? 'Bạn cần sở hữu chương này để có thể đọc tiếp.' : 'Vui lòng đăng nhập để tiếp tục đọc chương này.') }}
+            </p>
+            <div class="lock-actions">
+              <button v-if="!isLoggedIn" class="btn-login-prompt" @click="router.push('/login')">
+                Đăng nhập ngay
+              </button>
+              <div v-else-if="chapter.accessType === 2" class="paid-notice">
+                <span>Hệ thống ví Point và mở khóa chương đang được chuẩn bị ra mắt. Vui lòng quay lại sau!</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Image Viewer (Only render when hasAccess is true) -->
+          <div v-else class="images-container">
             <div v-if="!chapter.images || chapter.images.length === 0" class="empty-images">
               Chương này chưa có ảnh.
             </div>
@@ -60,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import api from "../../api/axios";
 import ClientHeader from "../../components/client/ClientHeader.vue";
@@ -76,6 +95,11 @@ const chapter = ref(null);
 const loading = ref(true);
 const error = ref(null);
 
+const isLoggedIn = computed(() => {
+  const raw = localStorage.getItem("currentUser");
+  return !!raw;
+});
+
 const resolveImageUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -84,7 +108,6 @@ const resolveImageUrl = (url) => {
 };
 
 const handleImageError = (e) => {
-  // If an image fails to load, we can hide it or show a placeholder
   console.error('Failed to load image:', e.target.src);
   e.target.style.display = 'none';
 };
@@ -96,10 +119,12 @@ async function fetchChapter(id) {
     const res = await api.get(`/chapters/${id}`);
     chapter.value = res.data;
     
-    saveReadingHistory(chapter.value.storyId, id);
+    if (chapter.value.hasAccess) {
+      saveReadingHistory(chapter.value.storyId, id);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
-    error.value = e.response?.data || "Không tìm thấy chương hoặc lỗi kết nối";
+    error.value = e.response?.data?.message || e.response?.data || "Không tìm thấy chương hoặc lỗi kết nối";
     console.error(e);
   } finally {
     loading.value = false;
@@ -109,16 +134,15 @@ async function fetchChapter(id) {
 async function saveReadingHistory(storyId, chapterId) {
   const raw = localStorage.getItem("currentUser");
   const user = raw ? JSON.parse(raw) : null;
-  if (!user) return; // Only save history if user is logged in
+  if (!user || !user.token) return; // Only save history if authenticated
   
   try {
     await api.post("/reading-history", {
-      userId: user.id,
       storyId: storyId,
       lastChapterId: chapterId
     });
   } catch (error) {
-    console.error("Lỗi khi lưu lịch sử đọc:", error);
+    // Slient fail for reading history logging
   }
 }
 
@@ -238,6 +262,68 @@ watch(() => props.id, (newId) => fetchChapter(newId));
   color: #4b5563;
   border-color: #374151;
   cursor: not-allowed;
+}
+
+.lock-banner {
+  background: #1e1b4b;
+  border: 2px dashed #a855f7;
+  border-radius: 20px;
+  padding: 50px 30px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.lock-icon {
+  font-size: 54px;
+}
+
+.lock-title {
+  margin: 0;
+  color: #e9d5ff;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.lock-desc {
+  margin: 0;
+  color: #c4b5fd;
+  font-size: 15px;
+  max-width: 500px;
+  line-height: 1.6;
+}
+
+.lock-actions {
+  margin-top: 12px;
+}
+
+.btn-login-prompt {
+  background: linear-gradient(135deg, #d946ef 0%, #a855f7 100%);
+  color: white;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.4);
+  transition: all 0.2s;
+}
+
+.btn-login-prompt:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+}
+
+.paid-notice {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid #c084fc;
+  padding: 12px 20px;
+  border-radius: 12px;
+  color: #f3e8ff;
+  font-size: 14px;
 }
 
 .images-container {

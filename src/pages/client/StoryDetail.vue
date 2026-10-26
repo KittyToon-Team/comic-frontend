@@ -76,8 +76,12 @@
               class="chapter-item"
               @click="goToChapter(chapter.id)"
             >
-              <span class="chapter-number">Chương {{ chapter.chapterNumber }}</span>
-              <span v-if="chapter.title" class="chapter-title">- {{ chapter.title }}</span>
+              <div class="chapter-number-row">
+                <span class="chapter-number">Chương {{ chapter.chapterNumber }}</span>
+                <span v-if="chapter.accessType === 1" class="access-badge" title="Cần đăng nhập">🔒</span>
+                <span v-else-if="chapter.accessType === 2" class="access-badge" title="Trả phí">💎</span>
+              </div>
+              <span v-if="chapter.title" class="chapter-title">{{ chapter.title }}</span>
             </button>
           </div>
         </section>
@@ -140,9 +144,8 @@ const loadChapters = async () => {
 };
 
 const checkFavoriteStatus = async () => {
-  if (!currentUser.value) return;
+  if (!currentUser.value || !currentUser.value.token) return;
   try {
-    // We get all favorites for the user and check if this story is in it
     const res = await api.get(`/users/${currentUser.value.id}/favorites`);
     const favorites = res.data || [];
     isFavorited.value = favorites.some(fav => fav.story && fav.story.id === parseInt(storyId));
@@ -159,7 +162,6 @@ onMounted(() => {
 
 const readFirstChapter = () => {
   if (chapters.value.length > 0) {
-    // Đọc chương đầu tiên trong danh sách (thường là chương nhỏ nhất)
     router.push(`/doc/${chapters.value[0].id}`);
   }
 };
@@ -169,7 +171,7 @@ const goToChapter = (chapterId) => {
 };
 
 const toggleFavorite = async () => {
-  if (!currentUser.value) {
+  if (!currentUser.value || !currentUser.value.token) {
     alert("Vui lòng đăng nhập để sử dụng tính năng này!");
     router.push("/login");
     return;
@@ -177,13 +179,12 @@ const toggleFavorite = async () => {
 
   try {
     await api.post("/favorites", {
-      userId: currentUser.value.id,
       storyId: parseInt(storyId)
     });
     isFavorited.value = !isFavorited.value;
   } catch (error) {
     console.error("Lỗi khi thay đổi trạng thái yêu thích:", error);
-    alert("Đã xảy ra lỗi, vui lòng thử lại sau.");
+    alert(error.response?.data?.message || "Đã xảy ra lỗi, vui lòng thử lại sau.");
   }
 };
 </script>
@@ -436,10 +437,21 @@ const toggleFavorite = async () => {
   box-shadow: 0 4px 12px rgba(244, 114, 182, 0.1);
 }
 
+.chapter-number-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
 .chapter-number {
   font-weight: 700;
   color: #9d174d;
   font-size: 15px;
+}
+
+.access-badge {
+  font-size: 14px;
 }
 
 .chapter-title {

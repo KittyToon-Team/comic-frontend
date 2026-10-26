@@ -17,7 +17,7 @@
             <input 
               type="text" 
               v-model="username" 
-              placeholder="Nhập tên đăng nhập..." 
+              placeholder="Nhập tên đăng nhập (tối thiểu 3 ký tự)..." 
               required
             />
           </div>
@@ -43,7 +43,7 @@
             <input 
               type="password" 
               v-model="password" 
-              placeholder="••••••••" 
+              placeholder="•••••••• (tối thiểu 6 ký tự)" 
               required
             />
           </div>
@@ -97,12 +97,18 @@ const handleRegister = async () => {
     return;
   }
 
+  if (password.value.length < 6) {
+    isError.value = true;
+    message.value = "Mật khẩu phải có ít nhất 6 ký tự.";
+    return;
+  }
+
   loading.value = true;
   message.value = "";
   isError.value = false;
 
   try {
-    const response = await api.post("/users", {
+    const response = await api.post("/register", {
       username: username.value,
       email: email.value,
       password: password.value,
@@ -110,18 +116,14 @@ const handleRegister = async () => {
 
     if (response.status === 201 || response.status === 200) {
       isError.value = false;
-      message.value = "Đăng ký thành công! Đang chuyển hướng...";
+      message.value = "Đăng ký tài khoản thành công! Đang chuyển hướng sang trang đăng nhập...";
       setTimeout(() => {
         router.push("/login");
       }, 1500);
     }
   } catch (error) {
     isError.value = true;
-    if (error.response?.status === 400) {
-      message.value = error.response.data || "Thông tin đăng ký không hợp lệ.";
-    } else {
-      message.value = "Không thể kết nối tới máy chủ. Hãy thử lại sau.";
-    }
+    message.value = error.response?.data?.message || error.response?.data || "Thông tin đăng ký không hợp lệ.";
   } finally {
     loading.value = false;
   }
